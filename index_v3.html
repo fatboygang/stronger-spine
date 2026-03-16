@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spine Protocol · Hoe Guo Ning</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f4f0;--surface:#ffffff;--surface2:#f0efe9;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);--text:#1a1a1a;--muted:#888078;--muted2:#555048;--p1:#e84040;--p2:#f0a030;--p3:#28c870;--p4:#3890e8;--radius:8px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;line-height:1.6;min-height:100vh;}
+.app{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:#f0efe9;border-right:1px solid rgba(0,0,0,0.1);position:fixed;top:0;left:0;height:100vh;display:flex;flex-direction:column;z-index:200;transition:transform .3s;overflow-y:auto;}
+.content{margin-left:220px;flex:1;}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.content{margin-left:0;}}
+.sidebar-logo{padding:22px 18px 16px;border-bottom:1px solid var(--border);}
+.logo-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.08em;line-height:1;}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;margin-top:3px;}
+.nav-group{padding:12px 10px 6px;}
+.nav-label{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:0 8px 6px;}
+.nav-btn{display:flex;align-items:center;gap:9px;width:100%;padding:8px 10px;border-radius:6px;border:none;background:none;color:var(--muted2);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;text-align:left;margin-bottom:2px;transition:all .15s;}
+.nav-btn:hover{background:var(--surface2);color:var(--text);}
+.nav-btn.active{background:var(--surface2);color:var(--text);font-weight:500;}
+.nav-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.page{display:none;padding:28px 32px 80px;max-width:960px;}
+.page.active{display:block;}
+@media(max-width:600px){.page{padding:18px 14px 60px;}}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:.04em;line-height:1;margin-bottom:4px;}
+.page-sub{font-size:13px;color:var(--muted2);margin-bottom:22px;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px;}
+@media(max-width:600px){.stat-row{grid-template-columns:1fr 1fr;}}
+.stat-card{background:#fff;border:1px solid rgba(0,0,0,0.1);border-radius:var(--radius);padding:14px 16px;}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:6px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;}
+.phase-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+@media(max-width:560px){.phase-grid{grid-template-columns:1fr;}}
+.phase-ov{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;border-top:3px solid;transition:transform .15s;}
+.phase-ov:hover{transform:translateY(-1px);background:#f8f7f4;}
+.phase-ov h3{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.04em;margin-bottom:2px;}
+.phase-ov .pw{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.phase-ov p{font-size:12.5px;color:var(--muted2);line-height:1.5;}
+.pbar{height:3px;background:rgba(0,0,0,0.1);border-radius:2px;margin-top:10px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:2px;transition:width .5s;}
+.pbar-lbl{font-size:10px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.log-table{width:100%;border-collapse:collapse;}
+.log-table th{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--border);}
+.log-table td{font-size:13px;padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--muted2);}
+.log-done{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:#d4f5e2;color:#1a7a40;}
+.alert{padding:12px 16px;border-left:2px solid;margin-bottom:18px;font-size:13.5px;line-height:1.6;}
+.alert-t{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px;font-weight:500;}
+.alert-red{border-color:var(--p1);background:#fff2f2;}
+.alert-red .alert-t{color:#c02020;}
+.alert-amber{border-color:var(--p2);background:#fffaf0;}
+.alert-amber .alert-t{color:#b87010;}
+.alert-green{border-color:var(--p3);background:#f2fdf6;}
+.alert-green .alert-t{color:#1a8a48;}
+.never-box{background:#fff5f5;border:1px solid rgba(232,64,64,.3);border-radius:var(--radius);padding:16px 18px;margin-bottom:18px;}
+.never-box h4{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#c02020;letter-spacing:.04em;margin-bottom:8px;}
+.never-box ul{list-style:none;padding:0;}
+.never-box li{font-size:13px;color:#444;padding:5px 0 5px 16px;position:relative;border-bottom:1px solid rgba(232,64,64,.08);}
+.never-box li:last-child{border-bottom:none;}
+.never-box li::before{content:'×';position:absolute;left:0;color:var(--p1);font-size:11px;top:7px;}
+.phase-hdr{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.phase-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 10px;border-radius:4px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.08em;}
+.phase-hdr h1{font-family:'Bebas Neue',sans-serif;font-size:40px;letter-spacing:.04em;line-height:1;margin-bottom:6px;}
+.phase-hdr .tl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.phase-hdr .goal{font-size:14px;color:var(--muted2);font-style:italic;max-width:640px;line-height:1.6;}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.04em;margin:24px 0 12px;color:var(--text);}
+.week-wrap{margin-bottom:24px;}
+.week-lbl{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-bottom:12px;}
+@media(max-width:560px){.week-grid{grid-template-columns:repeat(4,1fr);}}
+.day-tile{border:1px solid var(--border);border-radius:var(--radius);padding:9px 6px;text-align:center;cursor:pointer;background:var(--surface);transition:all .15s;}
+.day-tile:hover:not(.rest){border-color:var(--border2);background:var(--surface2);}
+.day-tile.active{border-color:#888;background:#e8e7e3;}
+.day-tile.done{border-color:var(--p3);background:rgba(40,200,112,.06);}
+.day-tile.rest{opacity:.4;cursor:default;}
+.d-name{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;}
+.d-label{font-size:11px;font-weight:500;line-height:1.3;color:var(--text);}
+.day-tile.done .d-label{color:var(--p3);}
+.day-tile.rest .d-label{color:var(--muted);}
+.d-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:9px;padding:1px 5px;border-radius:3px;margin-top:4px;}
+.d-dot{width:6px;height:6px;border-radius:50%;background:var(--p3);margin:4px auto 0;}
+.day-drawer{display:none;background:#f8f7f3;border:1px solid rgba(0,0,0,0.12);border-radius:var(--radius);padding:18px;margin-bottom:14px;animation:slideDown .2s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+.day-drawer.open{display:block;}
+.drawer-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.drawer-title{font-size:14px;font-weight:600;}
+.drawer-prog{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);}
+.drawer-bar{height:4px;background:rgba(0,0,0,0.1);border-radius:2px;margin-bottom:14px;overflow:hidden;}
+.drawer-bar-fill{height:100%;background:var(--p3);border-radius:2px;transition:width .3s;}
+.complete-banner{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#edfaf3;border:1px solid #7dd4a0;border-radius:var(--radius);margin-bottom:14px;}
+.cb-icon{font-size:22px;}
+.cb-text h3{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--p3);letter-spacing:.04em;}
+.cb-text p{font-size:12px;color:var(--muted2);}
+.ex-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:7px;overflow:hidden;transition:border-color .15s;}
+.ex-item.done{border-color:#5db87a;background:#f2fcf5;}
+.ex-item-hdr{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;}
+.check-circle{width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;cursor:pointer;}
+.check-circle:hover{border-color:var(--p3);}
+.ex-item.done .check-circle{background:var(--p3);border-color:var(--p3);}
+.check-tick{font-size:12px;color:#fff;display:none;font-weight:600;}
+.ex-item.done .check-tick{display:block;}
+.ex-info{flex:1;}
+.ex-name{font-size:13.5px;font-weight:500;line-height:1.3;}
+.ex-item.done .ex-name{text-decoration:line-through;color:var(--muted);}
+.ex-rx{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--p2);margin-top:2px;}
+.ex-item.done .ex-rx{color:var(--muted);}
+.ex-toggle{font-size:16px;color:var(--muted);transition:transform .2s;width:20px;text-align:center;flex-shrink:0;}
+.ex-item.expanded .ex-toggle{transform:rotate(45deg);}
+.ex-body{display:none;padding:0 14px 14px 48px;border-top:1px solid var(--border);}
+.ex-item.expanded .ex-body{display:block;}
+.cue-lbl{font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:12px 0 6px;}
+.cue-list{list-style:none;padding:0;}
+.cue-list li{font-size:13px;color:var(--muted2);padding:5px 0 5px 16px;position:relative;border-bottom:1px solid rgba(255,255,255,.04);line-height:1.5;}
+.cue-list li::before{content:'›';position:absolute;left:0;color:#b87010;font-size:12px;}
+.vid-btn{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:7px 12px;background:rgba(56,144,232,.08);border:1px solid rgba(56,144,232,.25);border-radius:5px;color:var(--p4);font-size:12px;text-decoration:none;transition:background .15s;}
+.vid-btn:hover{background:rgba(56,144,232,.15);}
+.criteria-list{display:flex;flex-direction:column;gap:7px;}
+.c-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;}
+.c-dot{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;margin-top:5px;}
+.c-text{font-size:13.5px;color:var(--muted2);}
+.muscle-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.muscle-grid{grid-template-columns:1fr;}}
+.muscle-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.muscle-card-hdr{padding:14px 16px;border-bottom:1px solid var(--border);}
+.muscle-card-hdr h3{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:.04em;margin-bottom:2px;}
+.muscle-card-hdr p{font-size:11.5px;color:var(--muted2);}
+.muscle-card-body{padding:10px 16px;}
+.m-ex-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.m-ex-item:last-child{border-bottom:none;}
+.m-pip{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:3px;flex-shrink:0;}
+.m-ex-name{font-size:12.5px;color:var(--muted2);}
+.mob-toggle{display:none;position:fixed;top:12px;left:12px;z-index:300;background:#fff;border:1px solid rgba(0,0,0,0.15);border-radius:7px;padding:8px 12px;cursor:pointer;font-size:18px;color:#1a1a1a;}
+@media(max-width:768px){.mob-toggle{display:flex;align-items:center;}}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:150;}
+.mob-overlay.show{display:block;}
+.divider{height:1px;background:var(--border);margin:22px 0;}
+</style>
+</head>
+<body>
+<button class="mob-toggle" onclick="toggleSidebar()">☰</button>
+<div class="mob-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name">SPINE<br>PROTOCOL</div>
+    <div class="logo-sub">Hoe Guo Ning · 2026</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Overview</div>
+    <button class="nav-btn active" onclick="go('dashboard')"><span>📊</span> Dashboard</button>
+    <button class="nav-btn" onclick="go('muscles')"><span>💪</span> Muscle map</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Phases</div>
+    <button class="nav-btn" onclick="go('p1')"><div class="nav-dot" style="background:var(--p1)"></div> Phase 1 · Calm</button>
+    <button class="nav-btn" onclick="go('p2')"><div class="nav-dot" style="background:var(--p2)"></div> Phase 2 · Stabilise</button>
+    <button class="nav-btn" onclick="go('p3')"><div class="nav-dot" style="background:var(--p3)"></div> Phase 3 · Load</button>
+    <button class="nav-btn" onclick="go('p4')"><div class="nav-dot" style="background:var(--p4)"></div> Phase 4 · Perform</button>
+    <button class="nav-btn" onclick="go('hyrox')"><span>🏁</span> Hyrox ready</button>
+  </div>
+</aside>
+<main class="content">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="page-title">DASHBOARD</div>
+  <div class="page-sub">L4/L5 disc bulge + posterior annular tear · Target: Hyrox 2026</div>
+  <div class="stat-row">
+    <div class="stat-card"><div class="stat-label">Sessions done</div><div class="stat-val" id="s-sessions" style="color:var(--p4)">0</div></div>
+    <div class="stat-card"><div class="stat-label">Exercises ticked</div><div class="stat-val" id="s-exercises" style="color:var(--p3)">0</div></div>
+    <div class="stat-card"><div class="stat-label">Current phase</div><div class="stat-val" id="s-phase" style="color:var(--p1)">1</div></div>
+    <div class="stat-card"><div class="stat-label">Week</div><div class="stat-val" id="s-week" style="color:var(--p2)">1</div></div>
+  </div>
+  <div class="sec-title">Phase progress</div>
+  <div class="phase-grid">
+    <div class="phase-ov" style="border-top-color:var(--p1)" onclick="go('p1')"><h3 style="color:var(--p1)">Phase 1 · Calm</h3><div class="pw">Weeks 1–3 · Daily · 30 min</div><p>McKenzie extensions, morning decompression, motor control reset.</p><div class="pbar"><div class="pbar-fill" id="pb-p1" style="background:var(--p1);width:0%"></div></div><div class="pbar-lbl" id="pl-p1">0% complete</div></div>
+    <div class="phase-ov" style="border-top-color:var(--p2)" onclick="go('p2')"><h3 style="color:var(--p2)">Phase 2 · Stabilise</h3><div class="pw">Weeks 4–8 · 4×/week · 45 min</div><p>McGill Big 3, hip hinge re-education, hip mobility unlock.</p><div class="pbar"><div class="pbar-fill" id="pb-p2" style="background:var(--p2);width:0%"></div></div><div class="pbar-lbl" id="pl-p2">0% complete</div></div>
+    <div class="phase-ov" style="border-top-color:var(--p3)" onclick="go('p3')"><h3 style="color:var(--p3)">Phase 3 · Load</h3><div class="pw">Weeks 9–16 · 5×/week · 60 min</div><p>Trap bar deadlift, hip thrust, squat, interval running.</p><div class="pbar"><div class="pbar-fill" id="pb-p3" style="background:var(--p3);width:0%"></div></div><div class="pbar-lbl" id="pl-p3">0% complete</div></div>
+    <div class="phase-ov" style="border-top-color:var(--p4)" onclick="go('p4')"><h3 style="color:var(--p4)">Phase 4 · Perform</h3><div class="pw">Weeks 17–22 · 5×/week · 75 min</div><p>Graded KB swing return, Hyrox simulation, fatigue drilling.</p><div class="pbar"><div class="pbar-fill" id="pb-p4" style="background:var(--p4);width:0%"></div></div><div class="pbar-lbl" id="pl-p4">0% complete</div></div>
+  </div>
+  <div class="sec-title">Session log</div>
+  <table class="log-table"><thead><tr><th>Date</th><th>Session</th><th>Exercises</th><th>Status</th></tr></thead><tbody id="log-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);font-style:italic;padding:20px">No sessions yet — open any phase and click a day to start.</td></tr></tbody></table>
+  <div class="divider"></div>
+  <div class="sec-title">Root cause</div>
+  <div class="alert alert-red"><div class="alert-t">Why this keeps happening</div>You have injured yourself twice in the same position: <strong>lumbar flexion under ballistic load during fatigue.</strong> KB swings and devil presses require glutes to fire explosively. Under fatigue your glutes are too slow, erectors compensate, and your L4/L5 disc absorbs the shear force. That is the pop. This is <strong>gluteal amnesia under dynamic load</strong> — entirely fixable.</div>
+  <div class="never-box"><h4>Avoid until Phase 4</h4><ul><li>Kettlebell swings — your exact injury mechanism, both times</li><li>Devil presses — overhead + hinge under fatigue, maximum risk</li><li>Loaded spinal flexion under fatigue: sit-ups, Russian twists, GHD</li><li>Sprint intervals while still symptomatic post-run</li><li>Barbell deadlifts from the floor until Phase 3 criteria are met</li></ul></div>
+</div>
+
+<!-- PHASE 1 -->
+<div class="page" id="page-p1">
+  <div class="phase-hdr">
+    <div class="phase-badge" style="background:rgba(232,64,64,.12);color:var(--p1)">Phase 1 · Weeks 1–3</div>
+    <h1 style="color:var(--p1)">CALM THE DISC</h1>
+    <div class="tl">Daily · ~30 min · Priority: disc centralisation</div>
+    <div class="goal">McKenzie method to centralise the disc, stop morning stiffness, recalibrate motor patterns. The posterior annular tear requires controlled lumbar extension — not rest.</div>
+  </div>
+  <div class="alert alert-red"><div class="alert-t">You are here right now</div>Morning stiffness + post-run soreness = still sub-acute phase. McKenzie press-ups every morning before standing are the most important thing you can do. Forward flexion worsens your annular tear.</div>
+  <div class="week-wrap"><div class="week-lbl">Weekly schedule — click a day to open exercises and log</div><div class="week-grid" id="wg-p1"></div><div id="wd-p1"></div></div>
+  <div class="sec-title">Phase 1 exit criteria</div>
+  <div class="criteria-list">
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Morning stiffness resolves within 15 min of waking</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">5km Zone 2 run with zero pain during or after</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Single-leg glute bridge: 10 clean reps each side, no lower back compensation</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Bird Dog: 10-sec hold without trunk rotation, both sides</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">No pain at rest, sitting, or walking</div></div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="page" id="page-p2">
+  <div class="phase-hdr">
+    <div class="phase-badge" style="background:rgba(240,160,48,.12);color:var(--p2)">Phase 2 · Weeks 4–8</div>
+    <h1 style="color:var(--p2)">STABILISE THE SPINE</h1>
+    <div class="tl">4 days/week · ~45 min</div>
+    <div class="goal">Build deep spinal stiffness, reprogram glute-first hip hinge, unlock hip mobility. This is what your previous physio missed: the neuromuscular infrastructure.</div>
+  </div>
+  <div class="alert alert-amber"><div class="alert-t">Weight reality check</div>Given your pre-injury baseline of 8.5–12.5kg per side, Phase 2 starts conservative. <strong>RDL: start 5–8kg per hand. Bulgarian split squat: bodyweight only weeks 4–5.</strong> Add 2.5kg only when 10 reps feel easy AND no next-day soreness.</div>
+  <div class="week-wrap"><div class="week-lbl">Weekly schedule — click a day to open exercises and log</div><div class="week-grid" id="wg-p2"></div><div id="wd-p2"></div></div>
+  <div class="sec-title">Phase 2 exit criteria</div>
+  <div class="criteria-list">
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">RDL with 10–12kg per hand × 10 reps, no back soreness next day</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Bulgarian split squat: bodyweight × 8 smooth reps each side</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Full side plank (feet stacked) held 30 sec each side</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">5km easy run with zero symptoms during or 24h after</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">90/90 hip stretch: neutral spine maintained 90 sec each side</div></div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="page" id="page-p3">
+  <div class="phase-hdr">
+    <div class="phase-badge" style="background:rgba(40,200,112,.12);color:var(--p3)">Phase 3 · Weeks 9–16</div>
+    <h1 style="color:var(--p3)">LOAD THE POSTERIOR CHAIN</h1>
+    <div class="tl">4–5 days/week · ~60 min</div>
+    <div class="goal">Progressive strength loading, return to deadlift and squat, interval running. Glutes and hamstrings must fatigue before the lower back ever reaches its limit.</div>
+  </div>
+  <div class="alert alert-green"><div class="alert-t">Phase 3 principle</div>Spine is now stable, glute-first pattern is grooved. Add load every week — only when form is perfect. The barbell hip thrust is the single most important exercise this phase.</div>
+  <div class="week-wrap"><div class="week-lbl">Weekly schedule — click a day to open exercises and log</div><div class="week-grid" id="wg-p3"></div><div id="wd-p3"></div></div>
+  <div class="sec-title">Phase 3 exit criteria</div>
+  <div class="criteria-list">
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Hip thrust ≥ 80kg × 5 reps with clean form</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Trap bar deadlift ≥ 70kg with clean form</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">8km run with zero symptoms during or after</div></div>
+    <div class="c-item"><div class="c-dot"></div><div class="c-text">Back squat ≥ 50kg × 5 reps</div></div>
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="page" id="page-p4">
+  <div class="phase-hdr">
+    <div class="phase-badge" style="background:rgba(56,144,232,.12);color:var(--p4)">Phase 4 · Weeks 17–22</div>
+    <h1 style="color:var(--p4)">PERFORMANCE & POWER</h1>
+    <div class="tl">5 days/week · ~75 min</div>
+    <div class="goal">Graded return to KB swings and devil press. Full Hyrox-specific conditioning. Fatigue-state drilling — race day is always about how you perform when tired.</div>
+  </div>
+  <div class="alert alert-red"><div class="alert-t">Phase 4 entry gate — do not skip</div>Before KB swings: hip thrust ≥ 80kg, trap bar DL ≥ 70kg, 8km run symptom-free, zero pain at rest. If not met, extend Phase 3 by 2 weeks.</div>
+  <div class="week-wrap"><div class="week-lbl">Weekly schedule — click a day to open exercises and log</div><div class="week-grid" id="wg-p4"></div><div id="wd-p4"></div></div>
+  <div class="sec-title">Permanent Hyrox rules</div>
+  <div class="never-box" style="border-color:#7dd4a0;background:#edfaf3;">
+    <h4 style="color:var(--p3)">Non-negotiable habits</h4>
+    <ul>
+      <li style="border-color:rgba(40,200,112,.1)">Warm up hip flexors + glutes before any KB workout — always, no exceptions</li>
+      <li style="border-color:rgba(40,200,112,.1)">During devil presses: if lower back takes over, stop the set, shake out, reset</li>
+      <li style="border-color:rgba(40,200,112,.1)">Never train KB swings heavy at the end of a fatiguing session</li>
+      <li style="border-color:rgba(40,200,112,.1)">Sit less than 45 min without standing and doing 10 McKenzie extensions</li>
+      <li style="border-color:rgba(40,200,112,.1)">After any long run or race: McKenzie + McGill Big 3 same day</li>
+    </ul>
+  </div>
+</div>
+
+<!-- HYROX -->
+<div class="page" id="page-hyrox">
+  <div class="phase-hdr">
+    <div class="phase-badge" style="background:rgba(255,255,255,.07);color:var(--muted2)">Race ready · Week 22+</div>
+    <h1>HYROX READY</h1>
+    <div class="tl">Maintenance protocol · Forever</div>
+    <div class="goal">Race-ready when you complete a full Hyrox simulation at 80% race pace with zero lower back symptoms during, after, or the next morning.</div>
+  </div>
+  <div class="alert alert-green"><div class="alert-t">Final clinical note</div>Your MRI shows no nerve root impingement and no structural instability. The disc will not close the annular tear — but with the right posterior chain strength and motor patterns, it will be protected so effectively it becomes irrelevant. <strong>Your spine will be stronger after this programme than before either injury.</strong></div>
+  <div class="sec-title">Permanent spine insurance · 3–4×/week forever</div>
+  <div class="criteria-list">
+    <div class="c-item"><div class="c-dot" style="background:var(--p3);border-color:var(--p3)"></div><div class="c-text"><strong>McKenzie press-ups · 10 reps</strong> — every morning you feel stiff, every post-heavy-lift day.</div></div>
+    <div class="c-item"><div class="c-dot" style="background:var(--p3);border-color:var(--p3)"></div><div class="c-text"><strong>McGill Big 3 · full pyramid</strong> — before every heavy session forever. Not optional.</div></div>
+    <div class="c-item"><div class="c-dot" style="background:var(--p3);border-color:var(--p3)"></div><div class="c-text"><strong>Barbell hip thrust heavy · 3×8</strong> — once per week permanently. Ongoing injury insurance.</div></div>
+    <div class="c-item"><div class="c-dot" style="background:var(--p3);border-color:var(--p3)"></div><div class="c-text"><strong>90/90 hip mobility · 2 min each side</strong> — before every single run forever.</div></div>
+  </div>
+</div>
+
+<!-- MUSCLE MAP -->
+<div class="page" id="page-muscles">
+  <div class="page-title">MUSCLE MAP</div>
+  <div class="page-sub">Every exercise targets one of these 5 key muscles. Why each matters and what builds it.</div>
+  <div class="muscle-grid">
+    <div class="muscle-card"><div class="muscle-card-hdr" style="border-left:3px solid var(--p1)"><h3 style="color:var(--p1)">Gluteus Maximus</h3><p>Priority 1 · Explosive hip extension — must fire before erectors</p></div><div class="muscle-card-body"><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">Glute bridge (neural pre-squeeze cue)</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">Single-leg glute bridge</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">RDL · Dowel hip hinge wall drill</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(40,200,112,.15);color:#60d090">P3</span><span class="m-ex-name">Barbell hip thrust ⭐ Key exercise</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(56,144,232,.15);color:#70b8f8">P4</span><span class="m-ex-name">KB swing — graded return</span></div></div></div>
+    <div class="muscle-card"><div class="muscle-card-hdr" style="border-left:3px solid var(--p2)"><h3 style="color:var(--p2)">Gluteus Medius</h3><p>Priority 2 · Pelvic stability — every running stride</p></div><div class="muscle-card-body"><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">Clamshells · Lateral band walks</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">Side plank (McGill Big 3)</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">Bulgarian split squat</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(40,200,112,.15);color:#60d090">P3</span><span class="m-ex-name">Single-leg RDL</span></div></div></div>
+    <div class="muscle-card"><div class="muscle-card-hdr" style="border-left:3px solid var(--p3)"><h3 style="color:var(--p3)">Multifidus</h3><p>Priority 3 · Deep spinal stabiliser — wraps L4/L5, atrophies after disc injury</p></div><div class="muscle-card-body"><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">McKenzie press-ups · Cat-camel</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">Bird dog (10-sec holds)</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">Bird dog with resistance band</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(40,200,112,.15);color:#60d090">P3</span><span class="m-ex-name">Trap bar deadlift · Farmer carries</span></div></div></div>
+    <div class="muscle-card"><div class="muscle-card-hdr" style="border-left:3px solid var(--p4)"><h3 style="color:var(--p4)">Transversus Abdominis</h3><p>Priority 4 · Intra-abdominal pressure — must pre-fire before every hinge</p></div><div class="muscle-card-body"><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">Bird dog (brace cue emphasis)</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">McGill modified curl-up</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">Pallof press · Anti-rotation hold</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(40,200,112,.15);color:#60d090">P3</span><span class="m-ex-name">360° brace cue on all loaded lifts</span></div></div></div>
+    <div class="muscle-card" style="grid-column:1/-1"><div class="muscle-card-hdr" style="border-left:3px solid #9988ee"><h3 style="color:#9988ee">Hip Flexor Complex (Psoas / Iliacus)</h3><p>Priority 5 · Tight hip flexors neurologically inhibit glutes — must be released before every session. Your tight hip rotation during running is a direct symptom.</p></div><div class="muscle-card-body" style="display:grid;grid-template-columns:1fr 1fr"><div class="m-ex-item"><span class="m-pip" style="background:rgba(232,64,64,.15);color:#f07070">P1</span><span class="m-ex-name">Prone lying decompression</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">Half-kneeling hip flexor stretch</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(240,160,48,.15);color:#f0c070">P2</span><span class="m-ex-name">90/90 hip stretch (daily warm-up)</span></div><div class="m-ex-item"><span class="m-pip" style="background:rgba(40,200,112,.15);color:#60d090">P3+</span><span class="m-ex-name">Pre-run 90/90 — permanent forever</span></div></div></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const S={
+p1:[
+  {label:'Morning routine',tag:'Daily',tagBg:'rgba(232,64,64,.15)',tagCol:'#f07070',exercises:[
+    {id:'prone',name:'Prone lying — disc decompression',rx:'2–3 min before standing every morning',cues:['Lie flat on stomach, arms by sides','Let gravity gently extend lumbar spine — fully relax','Stay 2–3 full minutes. Do not rush.','Counteracts overnight spinal flexion and reduces disc pressure'],vid:'McKenzie prone lying lumbar disc'},
+    {id:'mckenzie',name:'McKenzie press-ups',rx:'10 reps × 3 sets · morning + evening',cues:['Lie face-down, hands under shoulders','Keep hips on the floor — only upper body rises','Press up slowly, let lower back arch passively','Go to comfortable end-range, hold 1–2 sec at top','Lower slowly. Breathe out rising, in lowering.'],vid:'McKenzie press up prone extension lumbar disc bulge'},
+  ]},
+  {label:'Full session',tag:'Daily',tagBg:'rgba(232,64,64,.15)',tagCol:'#f07070',exercises:[
+    {id:'catcamel',name:'Cat-camel — spinal rhythm',rx:'10 slow cycles',cues:['On all fours, slowly arch up (cat) — feel each vertebra','Slowly let drop (camel) — gentle sag only, never forced','Slow rhythmic motion, not a stretch','Do NOT force end-range flexion — aggravates annular tear'],vid:'McGill cat camel spine mobility lumbar'},
+    {id:'gbneural',name:'Glute bridge — neural reprogramming',rx:'3 × 10 · 3-sec hold at top',cues:['BEFORE lifting: squeeze glutes hard 2 sec. THEN lift.','Drive through heels — glutes only, not hamstrings','At top: hold 3 full seconds, squeeze hard','Lower slowly over 3 counts'],vid:'glute bridge activation squeeze first rehab'},
+    {id:'birddog',name:'McGill bird dog',rx:'5-3-1 pyramid each side · 10-sec holds',cues:['Find neutral spine — slight arch, not flat back','BRACE core before any movement','Opposite arm + leg: move slowly, leg no higher than hip','Hips perfectly level. Hold 10 sec. Zero trunk rotation.'],vid:'McGill bird dog proper form spine stability'},
+    {id:'clam',name:'Clamshells',rx:'3 × 15 each side',cues:['Lie on side, band above knees, knees bent 45°','Lift top knee to 45° max — feel in side of glute only','Hold 2 sec, lower slowly'],vid:'clamshell exercise glute medius resistance band'},
+    {id:'bandwalk',name:'Lateral band walks',rx:'3 × 15 steps each direction',cues:['Band above knees, slight squat position','Step side-to-side, keep tension in band always','Stay low — do not pop up with each step'],vid:'lateral band walk glute medius activation'},
+  ]},
+  null,
+  {label:'Zone 2 run',tag:'Cardio',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'z2run',name:'Zone 2 run — conversational pace only',rx:'20–30 min',cues:['Conversational pace only — if you cannot talk, slow down','If lower back tightens: stop, do 10 standing McKenzie extensions','If symptoms post-run: shorten by 50% for 3 days'],vid:'zone 2 running heart rate easy pace'},
+  ]},
+  {label:'Full session',tag:'Daily',tagBg:'rgba(232,64,64,.15)',tagCol:'#f07070',exercises:[
+    {id:'catcamel2',name:'Cat-camel',rx:'10 slow cycles'},
+    {id:'gbneural2',name:'Glute bridge — neural',rx:'3 × 10 · 3-sec hold'},
+    {id:'birddog2',name:'McGill bird dog',rx:'5-3-1 pyramid · 10-sec holds'},
+    {id:'clam2',name:'Clamshells',rx:'3 × 15 each side'},
+    {id:'bandwalk2',name:'Lateral band walks',rx:'3 × 15 each direction'},
+  ]},
+  {label:'Zone 2 run',tag:'Cardio',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'z2run2',name:'Zone 2 run',rx:'30–40 min · conversational pace'},
+  ]},
+  null,
+],
+p2:[
+  {label:'Strength A',tag:'Strength',tagBg:'rgba(240,160,48,.15)',tagCol:'#f0c070',exercises:[
+    {id:'9090a',name:'90/90 hip stretch (warm-up)',rx:'2 min each side',cues:['Front leg 90°, rear leg 90° behind you','Sit TALL — do not round lower back','Feel external rotation stretch in front hip','Fixes tight hip rotation during running'],vid:'90 90 hip stretch mobility neutral spine'},
+    {id:'hflex',name:'Half-kneeling hip flexor stretch (warm-up)',rx:'90 sec each side',cues:['Kneel on right knee, left foot forward','TUCK right hip under (posterior tilt) — critical step','Shift forward until deep stretch front of right hip','Reach arm overhead, lean opposite — gets full psoas'],vid:'half kneeling hip flexor stretch posterior pelvic tilt'},
+    {id:'curlup',name:'McGill modified curl-up',rx:'5-3-1 pyramid · 10-sec holds',cues:['One knee bent, one leg flat. Hands under lower back.','BRACE core — stiffen entire torso first','Lift head and shoulders 2–3cm only. Not a crunch.','Hold 10 sec. Lower. 10s rest. Repeat.'],vid:'McGill modified curl up back pain spine stability'},
+    {id:'sideplank',name:'Side plank',rx:'5-3-1 pyramid · 10-sec holds each side',cues:['Start knee-down. Week 6+: full feet side plank.','Elbow under shoulder, body completely straight','SQUEEZE the glute of your top hip — essential step','Brace core, hold 10 sec, breathe normally'],vid:'McGill side plank spine stability lumbar'},
+    {id:'birdband',name:'Bird dog with resistance band',rx:'5-3-1 pyramid · 10-sec holds',cues:['Loop light band around raised foot','Drive heel back against band — feel glute max fire','Hips level, zero rotation'],vid:'bird dog resistance band spine stability'},
+    {id:'dowel',name:'Dowel hip hinge — wall drill',rx:'3 × 12 reps',cues:['Dowel along spine: 3 contact points — head, shoulder blades, tailbone','Stand 25cm from wall. Push hips BACK to touch wall.','Feel hamstring tension — hinge not squat','Squeeze glutes to drive hips forward'],vid:'hip hinge dowel rod wall drill deadlift pattern'},
+  ]},
+  {label:'Zone 2 run',tag:'Cardio',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'z2p2',name:'Zone 2 run',rx:'20–30 min'},
+  ]},
+  {label:'Strength B',tag:'Strength',tagBg:'rgba(240,160,48,.15)',tagCol:'#f0c070',exercises:[
+    {id:'9090b',name:'90/90 hip stretch (warm-up)',rx:'2 min each side'},
+    {id:'hflexb',name:'Half-kneeling hip flexor (warm-up)',rx:'90 sec each side'},
+    {id:'curlupb',name:'McGill curl-up',rx:'5-3-1 pyramid · 10-sec holds'},
+    {id:'sideplankb',name:'Side plank',rx:'5-3-1 pyramid each side'},
+    {id:'rdl',name:'Romanian deadlift (RDL)',rx:'3 × 10 · 5–8kg per hand · Week 6+',cues:['BRACE core. Push hips back toward wall behind you.','Lower dumbbells along legs. Stop before lower back rounds.','Drive hips forward, squeeze glutes hard at top.'],vid:'Romanian deadlift RDL form tutorial beginner'},
+    {id:'bss',name:'Bulgarian split squat',rx:'3 × 8 each leg · BW wks 4–5 · +4kg wk 7',cues:['Rear foot elevated, front foot 60–70cm forward','Lower straight down — torso stays upright','Front knee tracks over second toe — never caves in','Drive through front heel, squeeze glute at top'],vid:'Bulgarian split squat form tutorial RFESS'},
+  ]},
+  null,
+  {label:'Full session',tag:'Strength',tagBg:'rgba(240,160,48,.15)',tagCol:'#f0c070',exercises:[
+    {id:'9090c',name:'90/90 hip stretch',rx:'2 min each side'},
+    {id:'curlup2',name:'McGill curl-up',rx:'5-3-1 pyramid'},
+    {id:'sidepl2',name:'Side plank',rx:'5-3-1 pyramid each side'},
+    {id:'birdband2',name:'Bird dog + band',rx:'5-3-1 pyramid'},
+    {id:'dowel2',name:'Dowel hip hinge drill',rx:'3 × 12'},
+    {id:'rdl2',name:'RDL',rx:'3 × 10 · build weight weekly'},
+    {id:'bss2',name:'Bulgarian split squat',rx:'3 × 8 each leg'},
+  ]},
+  {label:'Zone 2 run',tag:'Cardio',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'z2p2b',name:'Zone 2 run',rx:'30–40 min'},
+  ]},
+  null,
+],
+p3:[
+  {label:'Heavy day',tag:'Heavy',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'9090p3',name:'90/90 hip stretch (warm-up)',rx:'2 min each side'},
+    {id:'curlp3',name:'McGill curl-up (warm-up)',rx:'5-3-1 pyramid'},
+    {id:'spkp3',name:'Side plank (warm-up)',rx:'30 sec each side'},
+    {id:'bdp3',name:'Bird dog (warm-up)',rx:'5-3-1 pyramid'},
+    {id:'trapbar',name:'Trap bar deadlift',rx:'4 × 5 · start 40kg · +2.5kg/week',cues:['BRACE 360° — front, back, sides like a corset','Push the floor away — do not pull','Lock out hips and glutes hard at top','Lower with control'],vid:'trap bar hex bar deadlift form back safe'},
+    {id:'hipthrust',name:'Barbell hip thrust ⭐',rx:'4 × 8 · start 20–30kg · +5kg/week',cues:['Upper back on bench, barbell at hip crease with pad','SQUEEZE glutes before any movement. Then drive up.','Full hip extension at top — neutral spine, not hyperextended','Hold 1 sec at top. Lower over 3 counts.','Feel entirely in glutes — if lower back, move hips closer to bench'],vid:'barbell hip thrust proper form Bret Contreras'},
+    {id:'nordic',name:'Nordic hamstring curl (eccentric)',rx:'3 × 5 · 5-sec lowering',cues:['Kneel, feet anchored. Fall forward taking 5 full seconds.','Catch with hands at bottom','Push back up — eccentric lowering is the point'],vid:'Nordic hamstring curl eccentric form tutorial'},
+    {id:'pallof',name:'Pallof press',rx:'3 × 12 each side',cues:['Band at chest height, stand side-on to anchor','Brace core against rotational pull','Press straight out, resist any trunk rotation, hold 2 sec'],vid:'Pallof press anti rotation core stability'},
+  ]},
+  {label:'Interval run',tag:'Run',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'intp3',name:'Interval run — progressive',rx:'Wk 9–10: 2×30s · Wk 11: 4×1min · Wk 13: 6×2min · Wk 15: 400m reps',cues:['Wk 9–10: 2 × 30 sec tempo pickups in middle of easy run','Wk 11–12: 4 × 1 min at 5km pace, 2 min recovery','Wk 13–14: 6 × 2 min tempo, 90 sec recovery','Wk 15–16: 400m repeats at race pace','If back tightens: drop back one level for 5 days'],vid:'interval run training progressive back to running'},
+  ]},
+  {label:'Squat day',tag:'Strength',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'9090p3s',name:'90/90 hip stretch (warm-up)',rx:'2 min each side'},
+    {id:'goblet',name:'Goblet squat → back squat',rx:'4 × 6 · goblet wk 9–10 → barbell 30kg wk 11',cues:['Feet slightly wider than hip-width, toes 15–30° out','Squat to parallel — hip crease below knees, back neutral','Drive knees out over toes throughout','Any back pain at bottom: more hip mobility work needed'],vid:'goblet squat perfect form tutorial'},
+    {id:'htsp3',name:'Barbell hip thrust',rx:'4 × 8 · build weight weekly'},
+    {id:'bssp3',name:'Bulgarian split squat',rx:'3 × 8 · 8–10kg each hand'},
+    {id:'pallofp3',name:'Pallof press',rx:'3 × 12 each side'},
+  ]},
+  null,
+  {label:'Hip thrust day',tag:'Strength',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'ht2p3',name:'Barbell hip thrust',rx:'4 × 8 · heavy — push the weight'},
+    {id:'norp3',name:'Nordic hamstring curl',rx:'3 × 5 · eccentric focus'},
+    {id:'fcarp3',name:'Farmer carries',rx:'3 × 30m · heavy dumbbells · brace throughout',cues:['Pick up heavy dumbbells, brace core fully','Walk tall — shoulders packed, do not lean','Superb multifidus and TA work under real load'],vid:'farmer carry proper form core stability'},
+  ]},
+  {label:'Tempo run',tag:'Run',tagBg:'rgba(40,200,112,.15)',tagCol:'#60d090',exercises:[
+    {id:'tempop3',name:'Tempo run',rx:'40–50 min · comfortably hard',cues:['90/90 hip stretch before starting','Maintain lumbar curve — never round under fatigue'],vid:'tempo run training zone 3'},
+  ]},
+  null,
+],
+p4:[
+  {label:'KB return day',tag:'KB',tagBg:'rgba(56,144,232,.15)',tagCol:'#70b8f8',exercises:[
+    {id:'hfp4',name:'Half-kneeling hip flexor (warm-up)',rx:'90 sec each side'},
+    {id:'primep4',name:'Glute priming — 3 squeezes × 5',rx:'Before every KB set · always',cues:['Stand still. Squeeze glutes 3× hard, 2 sec each.','Pre-activates motor pattern so glutes fire first on rep 1','Do this even mid-WOD before every swing set'],vid:'glute activation pre-activation firing pattern'},
+    {id:'kbdl',name:'KB deadlift (Week 17)',rx:'5 × 5 · 16kg · explosive glute lock-out',cues:['Explosive glute lock-out at top — groove hip snap without swing'],vid:'kettlebell deadlift form tutorial'},
+    {id:'kbrdl',name:'KB RDL single arm (Week 18)',rx:'3 × 10 each arm · 16kg',cues:['Single-arm version challenges anti-rotation — brace hard'],vid:'kettlebell single arm RDL form'},
+    {id:'kbswing',name:'KB swing — graded return (Week 19+)',rx:'12kg wk19 · 16kg wk20 · 20kg wk21',cues:['WK 19: 12kg, 5×5, 2 min rest. Stop at ANY back sensation.','WK 20: 16kg only if zero symptoms in Week 19','WK 21: 20kg, in circuits — never after fatiguing spinal work','Always: 3 glute squeezes before every set'],vid:'kettlebell swing proper form hip hinge explosive'},
+    {id:'hthrp4',name:'Barbell hip thrust',rx:'4 × 8 · heavy'},
+  ]},
+  {label:'Hyrox sim',tag:'Conditioning',tagBg:'rgba(56,144,232,.15)',tagCol:'#70b8f8',exercises:[
+    {id:'sled',name:'Sled push / pull',rx:'Build volume weekly',cues:['Neutral spine throughout — drive from hips and legs, not rounded back'],vid:'sled push proper form spine neutral'},
+    {id:'skierg',name:'Ski erg',rx:'Build volume weekly',cues:['Hinge at hips on the pull — glutes drive extension, not erectors'],vid:'ski erg proper form hip hinge technique'},
+    {id:'wallball',name:'Wall balls',rx:'Build volume weekly',cues:['BRACE before every catch — the catch is the most dangerous moment'],vid:'wall ball proper form squat clean throw'},
+    {id:'row',name:'Rowing (Concept2)',rx:'Build volume weekly',cues:['Maintain lumbar curve at the catch — never round under fatigue'],vid:'concept2 rowing form lumbar spine'},
+    {id:'devil',name:'Devil press (Week 22 only)',rx:'Light KB · tested separately first',cues:['Only Week 22 — swings and burpees comfortable independently first','Never at max fatigue until practiced 10+ times in training'],vid:'devil press proper form technique'},
+  ]},
+  null,null,
+  {label:'Strength + KB',tag:'Mixed',tagBg:'rgba(56,144,232,.15)',tagCol:'#70b8f8',exercises:[
+    {id:'trapdl4',name:'Conventional barbell deadlift',rx:'4 × 5 · progressive load'},
+    {id:'bsquat4',name:'Back squat',rx:'4 × 6 · progressive load'},
+    {id:'ht4',name:'Barbell hip thrust',rx:'4 × 8 · heavy'},
+    {id:'kbcirc',name:'KB swing in conditioning circuit',rx:'Only after full warm-up and glutes primed'},
+  ]},
+  {label:'Race sim run',tag:'Run',tagBg:'rgba(56,144,232,.15)',tagCol:'#70b8f8',exercises:[
+    {id:'racesim',name:'Race simulation run',rx:'8km at 80% pace · build to full Hyrox sim',cues:['Week before Hyrox: full sim at 80% — find where form breaks','That point is your race-day risk zone'],vid:'Hyrox training simulation race pace preparation'},
+  ]},
+  null,
+],
+};
+
+let state={log:[],ticks:{},stats:{sessions:0,exercises:0,phase:1,week:1}};
+try{const sv=localStorage.getItem('spineRehab_v3');if(sv)state=JSON.parse(sv);}catch(e){}
+function save(){try{localStorage.setItem('spineRehab_v3',JSON.stringify(state));}catch(e){}updateDash();}
+
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('active');});
+  if(['p1','p2','p3','p4'].includes(id))buildGrid(id);
+  document.querySelector('.content').scrollTop=0;
+  if(window.innerWidth<=768)toggleSidebar(false);
+}
+
+function toggleSidebar(f){
+  const s=document.getElementById('sidebar'),o=document.getElementById('overlay');
+  const open=f!==undefined?f:!s.classList.contains('open');
+  s.classList.toggle('open',open);o.classList.toggle('show',open);
+}
+
+let openDay={p1:-1,p2:-1,p3:-1,p4:-1};
+
+function buildGrid(phase){
+  const grid=document.getElementById('wg-'+phase);
+  if(!grid)return;
+  grid.innerHTML='';
+  S[phase].forEach((d,i)=>{
+    const done=isSessDone(phase,i);
+    const isOpen=openDay[phase]===i;
+    const tile=document.createElement('div');
+    tile.className='day-tile'+(d===null?' rest':'')+(done?' done':'')+(isOpen?' active':'');
+    tile.innerHTML=`<div class="d-name">${DAYS[i]}</div><div class="d-label">${d?d.label:'Rest'}</div>${d?`<div class="d-tag" style="background:${d.tagBg};color:${d.tagCol}">${d.tag}</div>`:''}${done?'<div class="d-dot"></div>':''}`;
+    if(d!==null)tile.onclick=()=>toggleDay(phase,i);
+    grid.appendChild(tile);
+  });
+}
+
+function isSessDone(phase,idx){
+  const d=S[phase][idx];
+  if(!d)return false;
+  return d.exercises.every(e=>state.ticks[`${phase}-${idx}-${e.id}`]);
+}
+
+function toggleDay(phase,idx){
+  const drawer=document.getElementById('wd-'+phase);
+  if(openDay[phase]===idx){openDay[phase]=-1;drawer.innerHTML='';buildGrid(phase);return;}
+  openDay[phase]=idx;buildGrid(phase);renderDrawer(phase,idx);
+}
+
+function renderDrawer(phase,idx){
+  const drawer=document.getElementById('wd-'+phase);
+  const d=S[phase][idx];
+  if(!d){drawer.innerHTML='';return;}
+  const total=d.exercises.length;
+  const done=d.exercises.filter(e=>state.ticks[`${phase}-${idx}-${e.id}`]).length;
+  const pct=total?Math.round(done/total*100):0;
+  const allDone=done>=total;
+  let html=`<div class="day-drawer open">`;
+  if(allDone)html+=`<div class="complete-banner"><div class="cb-icon">✓</div><div class="cb-text"><h3>Session complete!</h3><p>All ${total} exercises done. Excellent work.</p></div></div>`;
+  html+=`<div class="drawer-hdr"><div class="drawer-title">${DAYS[idx]} · ${d.label}</div><div class="drawer-prog">${done} / ${total} done</div></div><div class="drawer-bar"><div class="drawer-bar-fill" style="width:${pct}%"></div></div>`;
+  d.exercises.forEach(ex=>{
+    const k=`${phase}-${idx}-${ex.id}`;
+    const ticked=!!state.ticks[k];
+    html+=`<div class="ex-item${ticked?' done':''}" id="ei-${k}">
+      <div class="ex-item-hdr" onclick="toggleExpand('${k}')">
+        <div class="check-circle" onclick="event.stopPropagation();tick('${phase}',${idx},'${ex.id}')"><span class="check-tick">✓</span></div>
+        <div class="ex-info"><div class="ex-name">${ex.name}</div><div class="ex-rx">${ex.rx}</div></div>
+        <span class="ex-toggle">+</span>
+      </div>
+      <div class="ex-body">
+        ${ex.cues?`<div class="cue-lbl">Form cues</div><ul class="cue-list">${ex.cues.map(c=>`<li>${c}</li>`).join('')}</ul>`:'<p style="font-size:13px;color:var(--muted2);margin-top:10px">See full exercise guide in the phase page.</p>'}
+        ${ex.vid?`<a class="vid-btn" href="https://www.youtube.com/results?search_query=${encodeURIComponent(ex.vid)}" target="_blank">▶ Watch demo on YouTube</a>`:''}
+      </div>
+    </div>`;
+  });
+  html+=`</div>`;
+  drawer.innerHTML=html;
+}
+
+function toggleExpand(k){
+  const el=document.getElementById('ei-'+k);
+  if(el)el.classList.toggle('expanded');
+}
+
+function tick(phase,idx,exId){
+  const k=`${phase}-${idx}-${exId}`;
+  const was=!!state.ticks[k];
+  state.ticks[k]=!was;
+  state.stats.exercises=Math.max(0,(state.stats.exercises||0)+(was?-1:1));
+  const d=S[phase][idx];
+  const sessKey=`${phase}-${idx}`;
+  const allDone=d&&d.exercises.every(e=>state.ticks[`${phase}-${idx}-${e.id}`]);
+  if(allDone&&!state[sessKey+'_logged']){
+    state[sessKey+'_logged']=true;
+    state.stats.sessions=(state.stats.sessions||0)+1;
+    state.log.unshift({date:new Date().toLocaleDateString('en-SG',{day:'2-digit',month:'short',year:'numeric'}),sess:d.label,done:d.exercises.length,total:d.exercises.length});
+    if(state.log.length>20)state.log.pop();
+  }
+  save();
+  renderDrawer(phase,idx);
+  buildGrid(phase);
+}
+
+function updateDash(){
+  document.getElementById('s-sessions').textContent=state.stats.sessions||0;
+  document.getElementById('s-exercises').textContent=state.stats.exercises||0;
+  document.getElementById('s-phase').textContent=state.stats.phase||1;
+  document.getElementById('s-week').textContent=state.stats.week||1;
+  ['p1','p2','p3','p4'].forEach(p=>{
+    const days=S[p];
+    const total=days.reduce((a,d)=>a+(d?d.exercises.length:0),0);
+    const done=days.reduce((a,d,i)=>a+(d?d.exercises.filter(e=>state.ticks[`${p}-${i}-${e.id}`]).length:0),0);
+    const pct=total?Math.round(done/total*100):0;
+    const fill=document.getElementById('pb-'+p);
+    const lbl=document.getElementById('pl-'+p);
+    if(fill)fill.style.width=pct+'%';
+    if(lbl)lbl.textContent=pct+'% complete';
+  });
+  const tbody=document.getElementById('log-tbody');
+  if(state.log&&state.log.length){
+    tbody.innerHTML=state.log.slice(0,10).map(l=>`<tr><td>${l.date}</td><td>${l.sess}</td><td>${l.done}/${l.total}</td><td><span class="log-done">Done</span></td></tr>`).join('');
+  }
+}
+updateDash();
+</script>
+</body>
+</html>
